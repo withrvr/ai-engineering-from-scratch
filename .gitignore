@@ -95,3 +95,7 @@ site/langs.js
 !.claude/skills/build-project/**
 site/projects-data.js
 site/project-content/
+
+# Learning fork: share the session start hook with every cloud session
+!.claude/settings.json
+!.claude/hooks/
