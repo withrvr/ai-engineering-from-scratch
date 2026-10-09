@@ -6,9 +6,12 @@
 Ship an AI product (build and launch something real that uses AI) and make a
 career change into an AI engineering role.
 
-Build goal, in my words: "both ai agent, automated workflows and many product
-and after sometime fine tunning the model according to make usecase also but
-doing all this step by step".
+Build goal (updated 2026-10-09): I am not trying to create a new model from
+scratch, like a small language model or an LLM. My current focus is building
+AI agents and agent workflows: automating existing systems with agents, or
+building new agent-based systems to fit a requirement. Fine-tuning an existing
+model for a specific use case is a later, future step. I am working through
+every phase in order so I understand fully how all of this works.
 
 ## Placement
 - Date: 2026-10-09
