@@ -10,6 +10,13 @@ allowlist, and so on) apply only when editing curriculum content for upstream.
 
 - `/start-learning` runs once and writes `LEARNING.md`. `/learn` teaches the
   next lesson and updates it. `/check-understanding <phase>` quizzes a phase.
+- Lessons in a phase whose `LEARNING.md` status is `Review` are taught as an
+  overview, per the owner's study approach. Cover what the concept is in plain
+  words, why it matters for building agents and automation, one small example
+  (run the lesson's code if it's quick), and the lesson quiz. Skip derivations,
+  long exercises and from-scratch builds, and aim for 15-25 minutes per lesson.
+  Log the note as `overview` so a later deep dive can find it. `Do` phases get
+  the full lesson.
 - Learner code (exercise solutions, experiments) goes under
   `learning-artifacts/phase-NN/MM-slug/` unless the lesson says otherwise.
   Don't overwrite the checked-in reference code in `phases/` with learner work.
