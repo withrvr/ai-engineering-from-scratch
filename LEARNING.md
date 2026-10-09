@@ -16,14 +16,15 @@ every phase in order so I understand fully how all of this works.
 ## Placement
 - Date: 2026-10-09
 - Score: 5/10 (Math & Statistics 2/2, Classical ML 1/2, Deep Learning 0/2, NLP & Transformers 0/2, Applied AI 2/2)
-- Entry point: Phase 3: Deep Learning Core
+- Entry point: Phase 1: Math Foundations (my choice: revise Phases 1-2, then follow
+  the designed order; placement alone suggested Phase 3)
 - Pace: ~20+ h/week
 
 ## Path
 | Phase | Name | Status | Est. hours |
 |-------|------|--------|------------|
 | 0 | Setup & Tooling | Skip | -- |
-| 1 | Math Foundations | Skip | -- |
+| 1 | Math Foundations | Review | 23 |
 | 2 | ML Fundamentals | Review | 21 |
 | 3 | Deep Learning Core | Do | 15 |
 | 4 | Computer Vision | Do | 27 |
@@ -42,7 +43,7 @@ every phase in order so I understand fully how all of this works.
 | 17 | Infrastructure & Production | Do | 32 |
 | 18 | Ethics, Safety & Alignment | Do | 31 |
 | 19 | Capstone Projects | Do | 620 |
-| | **Total (Review + Do)** | | **1091** |
+| | **Total (Review + Do)** | | **1114** |
 
 ## Progress log
 | Date | Lesson | Quiz | Note |
