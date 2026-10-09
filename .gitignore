@@ -17,6 +17,7 @@ build/
 node_modules/
 .next/
 out/
+!manuals/*/capture/out/
 .vercel
 
 target/
@@ -95,6 +96,11 @@ site/langs.js
 !.claude/skills/build-project/**
 site/projects-data.js
 site/project-content/
+site/manual-*.html
+site/manuals-data.js
+site/manuals.html
+
+!manuals/*/capture/out/*.log
 
 # Learning fork: share the session start hook with every cloud session
 !.claude/settings.json

@@ -213,6 +213,8 @@
     var target = current;
     if (current === 'certification.html' || current === 'assessment.html') {
       target = 'certifications.html';
+    } else if (/^manual-[a-z0-9-]+\.html$/.test(current)) {
+      target = 'manuals.html';
     } else if (current === 'lesson.html') {
       try {
         var params = new URLSearchParams(location.search);
@@ -233,8 +235,9 @@
 
   function ensureNavigationLink(nav, filename, label, className) {
     var links = nav.querySelectorAll('a');
+    var target = pageFile(filename);
     for (var i = 0; i < links.length; i++) {
-      if (pageFile(links[i].href) === filename) return;
+      if (pageFile(links[i].href) === target) return;
     }
 
     var link = document.createElement('a');
@@ -248,6 +251,8 @@
   function addNavigationLinks(nav) {
     ensureNavigationLink(nav, 'learning-paths.html', 'Learning Paths', '');
     ensureNavigationLink(nav, 'projects.html', 'Projects', '');
+    ensureNavigationLink(nav, 'manuals.html', 'Manuals', '');
+    ensureNavigationLink(nav, '/blogs', 'Blogs & Guides', '');
     ensureNavigationLink(nav, 'certifications.html', 'Certifications', 'header-mobile-only');
     ensureNavigationLink(nav, 'sponsors.html', 'Sponsor us', 'header-mobile-only');
   }
@@ -409,6 +414,10 @@
   function load() {
     var headers = document.querySelectorAll('.site-header');
     for (var i = 0; i < headers.length; i++) setupNavigation(headers[i]);
+    var footers = document.querySelectorAll('.footer-links');
+    for (var j = 0; j < footers.length; j++) {
+      ensureNavigationLink(footers[j], '/blogs', 'Blogs & Guides', '');
+    }
     loadStars();
     ensureNarration();
     ensureUiI18n();

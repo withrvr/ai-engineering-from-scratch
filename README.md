@@ -3,19 +3,40 @@
 </p>
 
 <p align="center">
-  <b>Read in your language:</b>
-  <a href="i18n/es/README.md">Español</a> ·
-  <a href="i18n/fr/README.md">Français</a> ·
-  <a href="i18n/pt/README.md">Português</a> ·
-  <a href="i18n/de/README.md">Deutsch</a> ·
-  <a href="i18n/it/README.md">Italiano</a> ·
-  <a href="i18n/zh/README.md">简体中文</a> ·
-  <a href="i18n/ja/README.md">日本語</a> ·
-  <a href="i18n/ko/README.md">한국어</a> ·
-  <a href="i18n/hi/README.md">हिन्दी</a> ·
-  <a href="i18n/ar/README.md">العربية</a> ·
-  <a href="i18n/ru/README.md">Русский</a> ·
-  <a href="i18n/tr/README.md">Türkçe</a>
+  <a href="README.md">🇬🇧 English</a> ·
+  <a href="i18n/zh/README.md">🇨🇳 简体中文</a> ·
+  <a href="i18n/zh-TW/README.md">🇹🇼 繁體中文（台灣）</a> ·
+  <a href="i18n/ja/README.md">🇯🇵 日本語</a> ·
+  <a href="i18n/ko/README.md">🇰🇷 한국어</a> ·
+  <a href="i18n/pt/README.md">🇵🇹 Português</a> ·
+  <a href="i18n/pt-BR/README.md">🇧🇷 Português (Brasil)</a> ·
+  <a href="i18n/es/README.md">🇪🇸 Español</a> ·
+  <a href="i18n/de/README.md">🇩🇪 Deutsch</a> ·
+  <a href="i18n/fr/README.md">🇫🇷 Français</a> ·
+  <a href="i18n/it/README.md">🇮🇹 Italiano</a> ·
+  <a href="i18n/nl/README.md">🇳🇱 Nederlands</a> ·
+  <a href="i18n/pl/README.md">🇵🇱 Polski</a> ·
+  <a href="i18n/cs/README.md">🇨🇿 Čeština</a> ·
+  <a href="i18n/ro/README.md">🇷🇴 Română</a> ·
+  <a href="i18n/hu/README.md">🇭🇺 Magyar</a> ·
+  <a href="i18n/el/README.md">🇬🇷 Ελληνικά</a> ·
+  <a href="i18n/sv/README.md">🇸🇪 Svenska</a> ·
+  <a href="i18n/da/README.md">🇩🇰 Dansk</a> ·
+  <a href="i18n/no/README.md">🇳🇴 Norsk</a> ·
+  <a href="i18n/fi/README.md">🇫🇮 Suomi</a> ·
+  <a href="i18n/ru/README.md">🇷🇺 Русский</a> ·
+  <a href="i18n/uk/README.md">🇺🇦 Українська</a> ·
+  <a href="i18n/tr/README.md">🇹🇷 Türkçe</a> ·
+  <a href="i18n/he/README.md">🇮🇱 עברית</a> ·
+  <a href="i18n/ar/README.md">🇸🇦 العربية</a> ·
+  <a href="i18n/fa/README.md">🇮🇷 فارسی</a> ·
+  <a href="i18n/hi/README.md">🇮🇳 हिन्दी</a> ·
+  <a href="i18n/bn/README.md">🇧🇩 বাংলা</a> ·
+  <a href="i18n/ur/README.md">🇵🇰 اردو</a> ·
+  <a href="i18n/th/README.md">🇹🇭 ไทย</a> ·
+  <a href="i18n/vi/README.md">🇻🇳 Tiếng Việt</a> ·
+  <a href="i18n/id/README.md">🇮🇩 Bahasa Indonesia</a> ·
+  <a href="i18n/tl/README.md">🇵🇭 Tagalog</a>
 </p>
 
 <p align="center">
@@ -35,7 +56,7 @@
 
 <p align="center">
   <a href="https://serpapi.com/ai-engineering-from-scratch"><picture><source media="(min-width: 768px)" srcset="assets/sponsors/serpapi-banner-compact.png" width="48%"><img src="assets/sponsors/serpapi-banner-compact.png" alt="SerpApi. Web Search API for your AI apps. Available in Markdown and JSON for any integration." width="440"></picture></a>
-  <a href="https://nitrostack.ai/referral/aiengineeringfromscratch"><picture><source media="(min-width: 768px)" srcset="assets/sponsors/nitrostack-banner.png" width="48%"><img src="assets/sponsors/nitrostack-banner.png" alt="NitroStack. Build Production Ready MCP Apps with NitroStack. An end-to-end development platform for building, testing, debugging, and deploying production-ready MCP servers and applications. Click to know more." width="440"></picture></a>
+  <a href="https://nitrostack.ai/referral/aiengineeringfromscratch"><picture><source media="(min-width: 768px)" srcset="assets/sponsors/nitrostack-banner-equal.png" width="48%"><img src="assets/sponsors/nitrostack-banner-equal.png" alt="NitroStack. Build and deploy your MCP app in 10 minutes. Get your product into ChatGPT and Claude marketplaces with free cloud deployment." width="440"></picture></a>
 </p>
 
 <p align="center">
