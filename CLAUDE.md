@@ -23,8 +23,17 @@ allowlist, and so on) apply only when editing curriculum content for upstream.
 
 ## Git workflow (standing instructions from the owner)
 
-Progress must never live only in the container. Cloud sessions are ephemeral,
-and each one starts from `origin/main` on a fresh `claude/*` branch.
+Progress must never live only on one machine. The owner learns in two places:
+
+- **Cloud sessions** are ephemeral. Each one starts from `origin/main` on a
+  fresh `claude/*` branch.
+- **Local sessions** (WSL, set up once with `bash scripts/setup-wsl.sh`) work
+  directly on `main`. Run `git pull origin main` before the first lesson, since
+  cloud sessions and the CI bot also push to `main`. At the end, commit, then
+  run `git pull origin main && git push origin main`. The repo's
+  `pull.rebase` setting replays local commits on top of the bot's
+  `site/data.js` commits. A local Stop hook blocks finishing while work is
+  uncommitted or unpushed.
 
 **Commit as you go.** Commit after each lesson, quiz or meaningful piece of
 code. Keep progress and code in separate commits, using these subjects (max 72
@@ -40,7 +49,10 @@ characters):
 
 The commit body says what was learned or what was hard, in one or two lines.
 
-**End of session.** Push the session branch, then fast-forward `main` to it
+Upstream's `.gitignore` ignores `.claude/` apart from the skills. Stage the
+fork's `.claude/settings.json` and `.claude/hooks/` files with `git add -f`.
+
+**End of a cloud session.** Push the session branch, then fast-forward `main` to it
 and push `main`. The owner has given standing permission for this, so the
 next session starts with all progress:
 
@@ -66,6 +78,10 @@ git push origin main
 git checkout - && git merge main
 ```
 
+In a local session you're already on `main`, so skip the `checkout` lines. Push
+the merge right away, because `pull.rebase` would flatten an unpushed merge
+commit.
+
 Conflicts can occur only in files the learner also changed. Keep the learner's
 version of `LEARNING.md` and `learning-artifacts/`, and keep upstream's version
-of lesson content.
+of lesson content, `.gitignore` and the generated `site/data.js`.

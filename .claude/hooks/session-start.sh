@@ -1,12 +1,9 @@
 #!/bin/bash
-# SessionStart hook for cloud sessions: restores the upstream remote that a
-# fresh clone loses, reports how far the fork's main trails upstream, and
-# installs the Python libraries the early lessons import.
+# SessionStart hook: restores the upstream remote that a fresh clone loses
+# and reports how far the fork's main trails upstream. Cloud sessions also
+# install the Python libraries the early lessons import; local sessions
+# activate the .venv that scripts/setup-wsl.sh creates.
 set -euo pipefail
-
-if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
-  exit 0
-fi
 
 cd "$CLAUDE_PROJECT_DIR"
 
@@ -18,12 +15,21 @@ fi
 if git fetch --quiet upstream main 2>/dev/null && git fetch --quiet origin main 2>/dev/null; then
   behind=$(git rev-list --count origin/main..upstream/main)
   if [ "$behind" -gt 0 ]; then
-    echo "Fork main is $behind commit(s) behind upstream/main. Sync with: git checkout main && git merge upstream/main && git push origin main"
+    echo "Fork main is $behind commit(s) behind upstream/main. Sync per CLAUDE.md."
   else
     echo "Fork main is up to date with upstream/main."
   fi
 else
   echo "Could not fetch upstream; skipping sync check."
+fi
+
+if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
+  if [ -f .venv/bin/activate ] && [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+    echo "source \"$CLAUDE_PROJECT_DIR/.venv/bin/activate\"" >> "$CLAUDE_ENV_FILE"
+  elif [ ! -d .venv ]; then
+    echo "No .venv found. Run: bash scripts/setup-wsl.sh"
+  fi
+  exit 0
 fi
 
 PIP="python3 -m pip install --quiet --disable-pip-version-check --root-user-action=ignore"
