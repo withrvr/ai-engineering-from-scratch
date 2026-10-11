@@ -1,8 +1,10 @@
 #!/bin/bash
 # One-time local setup for this learning fork on WSL (Ubuntu) or Linux.
-# Installs uv, Python 3.12 in .venv with the course libraries, the GitHub
-# CLI for pushing, and Claude Code, then runs the Phase 0 environment check.
-# Safe to re-run: every step skips what is already in place.
+# Installs uv, Python 3.12 in .venv with the course libraries, push access
+# to the fork, and Claude Code, then runs the Phase 0 environment check.
+# Safe to re-run: every step skips what is already in place. When nobody can
+# type (Claude Code running it), steps needing a password or browser login
+# stop and print the command for the owner to run.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -11,6 +13,12 @@ UPSTREAM_URL="https://github.com/rohitg00/ai-engineering-from-scratch.git"
 export PATH="$HOME/.local/bin:$PATH"
 
 step() { printf '\n==> %s\n' "$1"; }
+interactive() { [ -t 0 ]; }
+can_sudo() { interactive || sudo -n true 2>/dev/null; }
+needs_you() {
+  printf '\nACTION NEEDED. Run this yourself, then rerun the script:\n  %s\n' "$1"
+  exit 3
+}
 
 step "System packages (git, curl)"
 missing=()
@@ -18,18 +26,19 @@ for pkg in git curl; do
   command -v "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
 done
 if [ ${#missing[@]} -gt 0 ]; then
-  sudo apt-get update && sudo apt-get install -y "${missing[@]}" ca-certificates
+  cmd="sudo apt-get update && sudo apt-get install -y ${missing[*]} ca-certificates"
+  can_sudo || needs_you "$cmd"
+  bash -c "$cmd"
 else
   echo "git and curl already installed."
 fi
 
 step "Git identity"
-if [ -z "$(git config --global user.name || true)" ]; then
+if [ -z "$(git config --global user.name || true)" ] || [ -z "$(git config --global user.email || true)" ]; then
+  interactive || needs_you 'git config --global user.name "Your Name" && git config --global user.email "your-github-email"'
   read -rp "Your name for git commits: " name
-  git config --global user.name "$name"
-fi
-if [ -z "$(git config --global user.email || true)" ]; then
   read -rp "Your email for git commits (use your GitHub email): " email
+  git config --global user.name "$name"
   git config --global user.email "$email"
 fi
 git config pull.rebase true
@@ -39,7 +48,7 @@ step "Upstream remote and latest progress"
 git remote get-url upstream >/dev/null 2>&1 || git remote add upstream "$UPSTREAM_URL"
 git fetch --quiet upstream main
 git checkout --quiet main
-git pull --quiet origin main
+git pull --quiet --autostash origin main
 behind=$(git rev-list --count main..upstream/main)
 echo "On main. Fork is $behind commit(s) behind upstream (ask Claude to sync if > 0)."
 
@@ -53,18 +62,20 @@ uv pip install --python .venv/bin/python numpy matplotlib jupyter
 uv pip install --python .venv/bin/python torch --index-url https://download.pytorch.org/whl/cpu \
   || echo "PyTorch install failed; rerun this script later. Only needed from Phase 3."
 
-step "GitHub CLI (lets git push to your fork)"
-if ! command -v gh >/dev/null 2>&1; then
-  sudo mkdir -p -m 755 /etc/apt/keyrings
-  curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-    | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg >/dev/null
-  sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
-    | sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
-  sudo apt-get update && sudo apt-get install -y gh
+step "Push access to your fork"
+if GIT_TERMINAL_PROMPT=0 git push --dry-run --quiet origin main >/dev/null 2>&1; then
+  echo "git push to your fork already works."
+else
+  if ! command -v gh >/dev/null 2>&1; then
+    can_sudo || needs_you "sudo apt-get update && sudo apt-get install -y gh"
+    sudo apt-get update && sudo apt-get install -y gh
+  fi
+  if ! gh auth status >/dev/null 2>&1; then
+    interactive || needs_you "gh auth login --hostname github.com --git-protocol https --web"
+    gh auth login --hostname github.com --git-protocol https --web
+  fi
+  gh auth setup-git
 fi
-gh auth status >/dev/null 2>&1 || gh auth login --hostname github.com --git-protocol https --web
-gh auth setup-git
 
 step "Claude Code"
 command -v claude >/dev/null 2>&1 || curl -fsSL https://claude.ai/install.sh | bash
