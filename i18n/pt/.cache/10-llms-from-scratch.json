@@ -12,7 +12,7 @@
   "phases/10-llms-from-scratch/11-quantization/docs/en.md": "7b089b523500e3a6948d1265e174f1c59cbc890f31faeba9549e5a9de95180bf",
   "phases/10-llms-from-scratch/12-inference-optimization/docs/en.md": "d502aa75594c7ba543a0093160c851ea1cd5982c529edcfc0efea9d0796a1cfc",
   "phases/10-llms-from-scratch/13-building-complete-llm-pipeline/docs/en.md": "4e36ed61b55f577852709ebd4b3ea3988e47ebe5daf7355ec55a06391de26b96",
-  "phases/10-llms-from-scratch/14-open-models-architecture-walkthroughs/docs/en.md": "3786ce2336c30cb590bc56bb9d3b04b6ba937121d3de4a4fe20cefad9c6d286c",
+  "phases/10-llms-from-scratch/14-open-models-architecture-walkthroughs/docs/en.md": "a99394857db92dbc5a151de35122a26e489a1b2bd31d78134e71071e1933f4d0",
   "phases/10-llms-from-scratch/15-speculative-decoding-eagle3/docs/en.md": "e7ccc1f2140d91351e1990b1556e97a2f6375b05ad1d7b36d5c852e1cec66ef5",
   "phases/10-llms-from-scratch/16-differential-attention-v2/docs/en.md": "89705e3112b66cdf2bb5444d632cafb5c4b168fe4693e534c92fb0d1051ae5df",
   "phases/10-llms-from-scratch/17-native-sparse-attention/docs/en.md": "ad7929f9d22e8abedc598a0c9779ac28461ac789d853787ac047a172a04d0755",

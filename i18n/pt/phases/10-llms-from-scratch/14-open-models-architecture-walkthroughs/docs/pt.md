@@ -154,6 +154,7 @@ Aqui está a mesa que faz todo este concreto.
 | Qwen 2.5 72B | 2024 | 72B | 72B | RMSNorm | SwiGLU | RoPE (YaRN) | GQA (64/8) | no | 128k |
 | DeepSeek V2 236B | 2024 | 236B | 21B | RMSNorm | SwiGLU | RoPE | MLA | yes (160 experts, top-6) | 128k |
 | DeepSeek V3 | 2024 | 671B | 37B | RMSNorm | SwiGLU | RoPE | MLA | yes (256 experts, top-8) | 128k |
+| Spark-X2.5 4B | 2026 | 4.1B | 4.1B | RMSNorm | GeGLU | RoPE + sliding (3:1) | GQA (16/4), gated output | no | 1M |
 
 Escanar as colunas. RMSNorm é universal. SwiGLU ou seu primo GeGLU é universal. RoPE é universal. GQA é universal acima de 7B, exceto quando substituído por MLA. MoE é o diferenciador na extremidade superior.
 
@@ -176,6 +177,12 @@ Llama 3 8B configuração:
 ```
 
 Cada campo corresponde a algo que já implementou.
+Configuras mais recentes adicionam alguns campos que alteram a aritmética, então a calculadora
+lê-os quando estão presentes:
+
+- `head_dim`: definido explicitamente quando não é `hidden_size / num_attention_heads`A Gemma 29B escondia 3584 e 16 cabeças , mas ...`head_dim`256, então sua projeção Q é 3584 x 4096, não quadrado.
+- `tie_word_embeddings`A Llama 3 8B não se liga, que é um parâmetro de 525M que se perde se apenas contar a incorporação uma vez.
+- `layer_types`E ...`sliding_window`: que as camadas atendem ao contexto completo e que apenas aos últimos tokens W.
 
 - `hidden_size`: dimensão de inserção.
 - `intermediate_size`: tamanho MLP oculto (3.5x oculto -- matemática SwiGLU).
@@ -212,6 +219,15 @@ Llama 3 8B em contexto de 128k, BF16, head_dim = hidden / num_heads = 128:
 
 Os pesos 8B são 16 GB em BF16. O cache KV para uma única sequência de 128k é maior do que os pesos. Esta é a pressão de memória que impulsiona a pesquisa de quantização de cache GQA, MLA e KV.
 
+A fórmula assume que cada camada cache toda a sequência. Uma camada de janela deslizante só precisa dos últimos tokens W, então para modelos híbridos a soma é executada por camada:
+
+```
+kv_cache = 2 * num_kv_heads * head_dim * bytes_per_element
+           * (full_layers * max_seq_len + sliding_layers * min(W, max_seq_len))
+```
+
+O Spark-X2.5 4B opera três camadas de janela deslizante (W = 512) para cada camada de atenção plena: 9 completas e 27 deslizantes de 36. No seu contexto de 1M-token que é cerca de 38,7 GB (36 GiB) por sequência em BF16. Se todas as 36 camadas armazenarem em cache o contexto completo, seria de 154,6 GB (144 GiB). As camadas completas suportam quase todo o custo, razão pela qual a relação de camadas completas com camadas deslizantes é o número a ser lido primeiro num modelo de longo contexto.
+
 ### Quando cada modelo ganha
 
 - **Single 80GB GPU, no MoE**Llama 3 8B, Mistral 7B, Gemma 2 9B. Fácil de servir, ferramentas largas.
@@ -219,6 +235,7 @@ Os pesos 8B são 16 GB em BF16. O cache KV para uma única sequência de 128k é
 - **Biggest open capability, accept MoE complexity**: DeepSeek V3, Mixtral 8x22B. Melhor capacidade por FLOP ativo.
 - **Long-context needs**: Llama 3 (128k com escalagem RoPE), DeepSeek (vantagem MLA).
 - **Low-latency serving**: Gemma 2 9B (florada deslizante corta computação de longo contexto).
+- **Long context on a small memory budget**: modelos híbridos de janela deslizante, como o Spark-X2.5 4B, onde apenas um quarto das camadas paga pelo contexto completo.
 
 ```figure
 rmsnorm-vs-layernorm
@@ -237,13 +254,17 @@ config = {
 }
 ```
 
-O script percorre o campo de arquitetura por campo, calcula os parâmetros para incorporação, atenção (com redução de GQA), MLP (com expansão SwiGLU), normas de camadas e cabeça.
+O script percorre o campo de arquitetura por campo, calcula os parâmetros para inserção, atenção (com redução GQA e uma `head_dim`quando a configuração define um), MLP (com SwiGLU ou GeGLU expansão), layernorms, e o cabeçalho LM quando não está ligado ao incorporado.
+
+Para os modelos densos os totais correspondem ao parâmetro publicado conta exatamente: Llama 3 8B sai em 8.030.261.248, Gemma 2 9B em 9.241.705.984, e Spark-X2.5 4B em 4.112.079.360. Qwen 2.5 72B está fora por 819,200, o que é o exercício 1.
 
 Veja .`code/main.py`para a execução.
 
 ## Usá-lo
 
 Execute a calculadora em configurações Llama 3 8B, Mistral 7B, Mixtral 8x7B e DeepSeek V3 em conjunto no script. Compare as desintegrações de parâmetros. Observe que os modelos MoE têm uma contagem de parâmetros total que enobrece os modelos densos, mas uma contagem de parâmetros ativa que é muitas vezes menor. Observe que o cache KV do DeepSeek V3 é menor do que o Llama 3 405B, apesar de ter mais parâmetros totais - isto é, MLA em ação.
+
+Em seguida, compare Gemma 2 9B e Spark-X2.5 4B. Para ambos, o script imprime o cache KV que ele realmente precisa e o cache KV que ele precisaria se cada camada fosse plena atenção. Gemma 2 alternar 1:1 em um contexto de 8k, então a economia é modesta. Spark-X2.5 vai 3:1 com uma janela de 512 tokens em 1M, então a economia é 4x.
 
 Depois, conecte um configurador para qualquer modelo que você tenha localmente, leia o resumo e decida se ele se encaixa na sua GPU.
 
