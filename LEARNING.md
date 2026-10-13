@@ -60,5 +60,7 @@ come later, after the agent goal.
 ## Progress log
 | Date | Lesson | Quiz | Note |
 |------|--------|------|------|
+| 2026-10-13 | 01/01 linear-algebra-intuition | 2/3 | overview; got RAG cosine pick and rank; mixed up LoRA with freezing layers |
 
 ## Review queue
+- 01/01 linear-algebra-intuition: how LoRA works (two low-rank matrices, base weights frozen)
