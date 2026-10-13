@@ -154,6 +154,7 @@ Voici la table qui fait tout ce béton.
 | Qwen 2.5 72B | 2024 | 72B | 72B | RMSNorm | SwiGLU | RoPE (YaRN) | GQA (64/8) | no | 128k |
 | DeepSeek V2 236B | 2024 | 236B | 21B | RMSNorm | SwiGLU | RoPE | MLA | yes (160 experts, top-6) | 128k |
 | DeepSeek V3 | 2024 | 671B | 37B | RMSNorm | SwiGLU | RoPE | MLA | yes (256 experts, top-8) | 128k |
+| Spark-X2.5 4B | 2026 | 4.1B | 4.1B | RMSNorm | GeGLU | RoPE + sliding (3:1) | GQA (16/4), gated output | no | 1M |
 
 Le RMSNorm est universel. SwiGLU ou son cousin GeGLU est universel. RoPE est universel. GQA est universel au-dessus de 7B sauf lorsqu'il est remplacé par MLA. MoE est le différenciateur à l'extrémité supérieure.
 
@@ -176,6 +177,12 @@ Llama 3 8B configuration:
 ```
 
 Chaque champ correspond à quelque chose que vous avez déjà mis en œuvre.
+Les nouvelles configurations ajoutent quelques champs qui changent l'arithmétique, donc la calculatrice
+Il les lit quand ils sont présents:
+
+- `head_dim`: définie explicitement lorsqu' elle n' est pas `hidden_size / num_attention_heads`Gemma 29B a caché 3584 têtes et 16 têtes .`head_dim`256, donc sa projection Q est 3584 x 4096, pas carré.
+- `tie_word_embeddings`Llama 3 8B ne s'attache pas, ce qui est un paramètre de 525M que vous manquez si vous ne comptez que la mise en place une seule fois.
+- `layer_types`et `sliding_window`: qui répondent au contexte complet et qui ne répondent qu'aux derniers jetons W.
 
 - `hidden_size`: dimension d'intégration.
 - `intermediate_size`: taille cachée de MLP (3.5x cachée -- math SwiGLU).
@@ -212,6 +219,15 @@ Llama 3 8B dans le contexte 128k, BF16, tête_dim = cachée / num_heads = 128:
 
 Les poids 8B sont de 16 Go en BF16. Le cache KV pour une seule séquence 128k est plus grand que les poids.
 
+La formule suppose que chaque couche cache toute la séquence.
+
+```
+kv_cache = 2 * num_kv_heads * head_dim * bytes_per_element
+           * (full_layers * max_seq_len + sliding_layers * min(W, max_seq_len))
+```
+
+Spark-X2.5 4B fonctionne avec trois couches de fenêtre coulissante (W = 512) pour chaque couche d'attention pleine: 9 pleine et 27 coulissantes sur 36. Dans son contexte de 1M-token qui est d'environ 38,7 GB (36 GiB) par séquence dans BF16. Si les 36 couches cachaient le contexte complet, il serait de 154,6 Go (144 GiB). Les couches complètes représentent presque le coût total, c'est pourquoi le ratio des couches complètes et des couches coulissantes est le nombre à lire en premier sur un modèle de long contexte.
+
 ### Quand chaque modèle gagne
 
 - **Single 80GB GPU, no MoE**Llama 3 8B, Mistral 7B, Gemma 2 9B. Facile à servir, outillage large.
@@ -219,6 +235,7 @@ Les poids 8B sont de 16 Go en BF16. Le cache KV pour une seule séquence 128k es
 - **Biggest open capability, accept MoE complexity**: DeepSeek V3, Mixtral 8x22B. La meilleure capacité par FLOP actif.
 - **Long-context needs**: Llama 3 (128k avec RoPE), DeepSeek (avantage MLA).
 - **Low-latency serving**: Gemma 2 9B (facile à couler réduit le calcul de longs contextes).
+- **Long context on a small memory budget**: modèles hybrides de fenêtres coulissantes tels que Spark-X2.5 4B, où seulement un quart des couches paient pour le contexte complet.
 
 ```figure
 rmsnorm-vs-layernorm
@@ -237,13 +254,17 @@ config = {
 }
 ```
 
-Le script passe le champ d'architecture par champ, calcule les paramètres pour l'intégration, l'attention (avec réduction GQA), MLP (avec expansion SwiGLU), les normes de couches et la tête. Il calcule ensuite le cache KV à la longueur de contexte indiquée et imprime un résumé.
+Le script passe le champ d'architecture par champ, calcule les paramètres pour l'intégration, l'attention (avec la réduction GQA et une explicite `head_dim`lorsque la configuration en définit un), MLP (avec l'expansion SwiGLU ou GeGLU), les normes de couche et la tête LM lorsqu'elle n'est pas attachée à l'intégration. Il calcule ensuite le cache KV à la longueur du contexte indiquée, couche par couche afin que les couches de fenêtre coulissante soient plaquées à leur fenêtre, et imprime un résumé.
+
+Pour les modèles denses, les totaux correspondant au paramètre publié comptent exactement: Llama 3 8B sort à 8.030.261.248, Gemma 2 9B à 9.241.705.984, et Spark-X2.5 4B à 4.112.079.360.
 
 Regardez !`code/main.py`pour la mise en œuvre.
 
 ## Utilisez-le
 
 Exécutez la calculatrice sur les configurations Llama 3 8B, Mistral 7B, Mixtral 8x7B et DeepSeek V3 regroupées dans le script. Comparer les pannes de paramètres. Notez que les modèles MoE ont un nombre total de paramètres qui égale les modèles denses mais un nombre de paramètres actifs qui est souvent plus petit. Notez que le cache KV de DeepSeek V3 est plus petit que celui de Llama 3 405B malgré avoir plus de paramètres totaux - c'est MLA en action.
+
+Puis comparez Gemma 2 9B et Spark-X2.5 4B. Pour les deux, le script imprime le cache KV dont il a réellement besoin et le cache KV dont il aurait besoin si chaque couche était pleinement attentive. Gemma 2 alternera 1:1 dans un contexte 8k, donc l'épargne est modeste. Spark-X2.5 va 3:1 avec une fenêtre de 512 jetons à 1M, donc l'épargne est 4x.
 
 Puis connectez un configuration pour n'importe quel modèle que vous avez localement, lisez le résumé, et décidez si il correspond à votre GPU.
 
