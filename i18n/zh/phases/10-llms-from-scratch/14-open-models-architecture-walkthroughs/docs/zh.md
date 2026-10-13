@@ -154,6 +154,7 @@ graph LR
 | Qwen 2.5 72B | 2024 | 72B | 72B | RMSNorm | SwiGLU | RoPE (YaRN) | GQA (64/8) | no | 128k |
 | DeepSeek V2 236B | 2024 | 236B | 21B | RMSNorm | SwiGLU | RoPE | MLA | yes (160 experts, top-6) | 128k |
 | DeepSeek V3 | 2024 | 671B | 37B | RMSNorm | SwiGLU | RoPE | MLA | yes (256 experts, top-8) | 128k |
+| Spark-X2.5 4B | 2026 | 4.1B | 4.1B | RMSNorm | GeGLU | RoPE + sliding (3:1) | GQA (16/4), gated output | no | 1M |
 
 扫描列.RMSNorm是通用的.SwiGLU或其GeGLU表兄弟是通用的.RoPE是通用的.GQA是通用的7B以上,除非被MLA取代.MoE是顶端的区分符.
 
@@ -176,6 +177,12 @@ graph LR
 ```
 
 每个领域都与你已经实施的东西相匹配.
+较新的配置添加了一些改变算数的字段,所以计算器
+在他们面前读到:
+
+- `head_dim`: 明确设置,而不是`hidden_size / num_attention_heads`马29B藏了3584头和16头,但`head_dim`它们的Q投影是3584 x 4096,而不是方形.
+- `tie_word_embeddings`拉马3 8B不结合,这是525M参数,如果你只计算一个次嵌入.
+- `layer_types`其他`sliding_window`它们只能在最后一个W代币中找到一个.
 
 - `hidden_size`嵌入式尺寸
 - `intermediate_size`缩的数据是:
@@ -212,6 +219,15 @@ kv_cache = 2 * num_layers * num_kv_heads * head_dim * max_seq_len * bytes_per_el
 
 8B重量为16GB,BF16中.单个128k序列的KV缓存量比重量大.这是驱动GQA,MLA和KV缓存量化研究的内存压力.
 
+公式假设每个层存储整个序列.一个滑动窗口层只需要最后的W代币,所以对混合模型来说,每个层的总和是:
+
+```
+kv_cache = 2 * num_kv_heads * head_dim * bytes_per_element
+           * (full_layers * max_seq_len + sliding_layers * min(W, max_seq_len))
+```
+
+对于每一个全重视层,Spark-X2.5 4B运行三个滑动窗口层 (W = 512):9个全重视层,27个滑动窗口. 在其1M代币背景下,BF16中每次序列约为38.7GB (36 GiB). 如果所有36层都存储了完整的语境,那么它将是154.6GB (144 GiB). 完全层几乎承担全部成本,这就是为什么在长文本模型上,全层与滑层的比例是首先要读的数量.
+
 ### 每个模特都会赢得
 
 - **Single 80GB GPU, no MoE**马3 8B,米斯特拉7B,Gemma2 9B. 很容易使用,宽的工具.
@@ -219,6 +235,7 @@ kv_cache = 2 * num_layers * num_kv_heads * head_dim * max_seq_len * bytes_per_el
 - **Biggest open capability, accept MoE complexity**果:深度搜索V3,Mixtral 8x22B. 每个活跃的FLOP最好的功能.
 - **Long-context needs**: Llama 3 (128k 具有ROPE扩展),深度搜索 (MLA优势).
 - **Low-latency serving**:Gemma 2 9B (滑窗切断长文本计算).
+- **Long context on a small memory budget**:混合滑窗模型,如Spark-X2.5 4B,其中只有四分之一的层支付完整的文本.
 
 ```figure
 rmsnorm-vs-layernorm
@@ -237,13 +254,17 @@ config = {
 }
 ```
 
-脚本将建筑领域按字段进行行程,计算嵌入,注意 (GQA减小),MLP (SwiGLU扩展),层规范和头.然后计算KV缓存在指定的文本长度上并打印总结.
+脚本将建筑领域按领域进行行程,计算嵌入,注意 (GQA减小和明确的数值)`head_dim`当配置设置一个时),MLP (具有SwiGLU或GeGLU扩展),层规范,以及没有与嵌入绑定时的LM头.然后它计算KV缓存在指定的语境长度,层次按层,以便在窗口上盖到滑动窗口层,并打印总结.
+
+对于密集型号,总数与公布的参数完全一致:Llama 3 8B出现在8,030,261,248,Gemma 2 9B出现在9,241,705,984,Spark-X2.5 4B出现在4,112,079,360.Qwen 2.5 72B出现在819,200,这就是练习1.
 
 看到`code/main.py`执行.
 
 ## 用它
 
 运行计算器在Llama 3 8B,Mistral 7B,Mixtral 8x7B和DeepSeek V3配置中. 进行参数分解的比较. 注意MoE模型的总参数数数量超过密集型号,但活性参数数数量通常较小. 注意DeepSeek V3的KV缓存量比Llama 3 405B小,尽管总参数更大 - 即是MLA在操作中.
+
+然后比较Gemma 2 9B和Spark-X2.5 4B. 对于这两种,脚本打印了它实际需要的KV缓存和它需要的KV缓存,如果每个层都能充分关注.Gemma 2在8k环境中交替 1:1,所以节省量很小.Spark-X2.5在1M时与512代币窗口 3:1,所以节省量为4x.
 
 然后将本地任何模型的配置插入,阅读摘要,
 
