@@ -61,6 +61,7 @@ come later, after the agent goal.
 | Date | Lesson | Quiz | Note |
 |------|--------|------|------|
 | 2026-10-13 | 01/01 linear-algebra-intuition | 2/3 | overview; got RAG cosine pick and rank; mixed up LoRA with freezing layers |
+| 2026-10-13 | 01/02 vectors-matrices-operations | 1/2 | overview; mixed up which side of matmul must match (500x384 @ ?); zero determinant was new; LoRA warm-up now correct |
 
 ## Review queue
-- 01/01 linear-algebra-intuition: how LoRA works (two low-rank matrices, base weights frozen)
+- 01/02 vectors-matrices-operations: zero determinant means singular, no inverse; matmul inner dimensions must match
